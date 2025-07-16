@@ -39,15 +39,9 @@ public class ApplicationConfig {
                 .build();
     }
 
-    @Bean
-    public WebClient webClient(WebClient.Builder builder) {
-        return builder
-                .baseUrl("https://api.example.com")
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-    }
+  
 
-    /*@Bean
+    @Bean
     public LettuceConnectionFactory redisConnectionFactory(
             @Value("${spring.data.redis.url}") String redisUrl) {
         RedisStandaloneConfiguration cfg = new RedisStandaloneConfiguration();
@@ -66,17 +60,17 @@ public class ApplicationConfig {
         }
         return new LettuceConnectionFactory(cfg);
     }
-*/
 
 
-    @Bean
+
+   /* @Bean
     public LettuceConnectionFactory redisConnectionFactory(
             @Value("${spring.redis.host}") String host,
             @Value("${spring.redis.port}") int port) {
         LettuceConnectionFactory factory = new LettuceConnectionFactory(host, port);
         factory.setValidateConnection(true);
         return factory;
-    }
+    } */
 
     @Bean
     public ApplicationRunner initializeTables(ConnectionFactory connectionFactory) {

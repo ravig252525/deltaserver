@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delta Exchange | Stock Watchlist</title>
+
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #4285F4;
+            --primary-dark: #3367D6;
+            --secondary: #34A853;
+            --danger: #EA4335;
+            --warning: #FBBC05;
+            --dark: #202124;
+            --light: #f8f9fa;
+            --gray: #5f6368;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+            --surface: #ffffff;
+            --background: #f5f7fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            background-color: var(--background);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header & Navigation */
+        header {
+            background: var(--surface);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+            height: 70px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .logo-icon {
+            color: var(--primary);
+            font-size: 28px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            margin-left: 40px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--gray);
+            font-weight: 500;
+            position: relative;
+            padding: 24px 0;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--primary);
+        }
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 24px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(66, 133, 244, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 6px rgba(66, 133, 244, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+            flex: 1;
+            width: 100%;
+        }
+
+        .page-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .page-title h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            width: 100%;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+            width: 100%;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--gray);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .stat-change {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .positive {
+            color: var(--secondary);
+        }
+
+        .negative {
+            color: var(--danger);
+        }
+
+        /* Search Section */
+        .search-section {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 32px;
+            width: 100%;
+        }
+
+        .search-header {
+            margin-bottom: 20px;
+            font-weight: 500;
+            font-size: 1.1rem;
+            color: var(--dark);
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 24px;
+            width: 100%;
+        }
+
+        #search {
+            width: 100%;
+            padding: 16px 24px;
+            border-radius: 50px;
+            border: 1px solid #e0e0e0;
+            font-size: 1rem;
+            background: #f8f9fa;
+            transition: var(--transition);
+        }
+
+        #search:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+            background: white;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+            font-size: 1.5rem;
+        }
+
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        .suggestion {
+            display: flex;
+            justify-content: space-between;
+            padding: 16px 24px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .suggestion:not(:last-child) {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .suggestion:hover {
+            background: #f8f9fa;
+        }
+
+        /* Watchlist */
+        .watchlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .watchlist-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            transition: var(--transition);
+            animation: fadeIn 0.3s ease;
+            width: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .card-badge {
+            background: rgba(66, 133, 244, 0.1);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .ltp {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 4px 0;
+        }
+
+        .change-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .change_pct {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--gray);
+            transition: var(--transition);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: #f5f7fa;
+            color: var(--danger);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            background: var(--surface);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .empty-state .material-icons {
+            font-size: 64px;
+            color: #e0e0e0;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 16px;
+            font-size: 1.5rem;
+        }
+
+        .empty-state p {
+            color: var(--gray);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--surface);
+            padding: 32px 24px;
+            border-top: 1px solid #e0e0e0;
+            margin-top: auto;
+            width: 100%;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: var(--dark);
+            font-size: 1.2rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-links a {
+            color: var(--gray);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .footer-copyright {
+            max-width: 1400px;
+            margin: 20px auto 0;
+            text-align: center;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .nav-links {
+                display: none;
+            }
+
+            .page-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .auth-buttons {
+                display: none;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 24px;
+                text-align: center;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .search-container {
+                margin-bottom: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .watchlist-container {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                width: 100%;
+            }
+
+            nav {
+                padding: 0 16px;
+            }
+
+            .container {
+                padding: 24px 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header with Navigation -->
+    <header>
+        <nav>
+            <div class="logo">
+                <i class="material-icons logo-icon">analytics</i>
+                <span>Delta Exchange</span>
+            </div>
+
+            <div class="nav-links">
+                <a href="#" class="active">Dashboard</a>
+                <a href="#">Markets</a>
+                <a href="#">Portfolio</a>
+                <a href="#">News</a>
+                <a href="#">Learn</a>
+            </div>
+
+            <div class="auth-buttons">
+                <button class="btn btn-outline">
+                    <i class="material-icons">login</i>
+                    Login
+                </button>
+                <button class="btn btn-primary">
+                    <i class="material-icons">person_add</i>
+                    Register
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="page-title">
+            <h1>Stock Watchlist</h1>
+
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-header">Search perpetual futures to add to your watchlist</div>
+            <div class="search-container">
+                <input id="search" type="search" placeholder="Search perpetual_futures…">
+                <i class="material-icons search-icon">search</i>
+                <div id="suggestions" class="suggestions"></div>
+            </div>
+            <div class="search-tips">
+                <p>Tip: Start typing to find assets like BTC-USD, ETH-USD, or TSLA</p>
+            </div>
+        </div>
+
+        <!-- Watchlist -->
+        <div class="watchlist-header">
+            <h2>Your Watchlist</h2>
+            <div class="watchlist-info">
+                <span id="watchlist-count">0</span> assets tracked
+            </div>
+        </div>
+        <div id="watchlist" class="watchlist-container">
+            <!-- Cards will be added here dynamically from Firestore -->
+        </div>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="empty-state">
+            <i class="material-icons">visibility_off</i>
+            <h3>Your watchlist is empty</h3>
+            <p>Search for perpetual futures above and add them to your watchlist to track real-time prices.</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <i class="material-icons">analytics</i>
+                <span>Delta Exchange</span>
+            </div>
+            <div class="footer-links">
+                <a href="#">About</a>
+                <a href="#">Terms</a>
+                <a href="#">Privacy</a>
+                <a href="#">Help Center</a>
+                <a href="#">API</a>
+            </div>
+        </div>
+        <div class="footer-copyright">
+            <p>© 2023 Delta Exchange. All market data is for demonstration purposes only.</p>
+        </div>
+    </footer>
+    <script>
+        const watchlistEl = document.getElementById('watchlist');
+        const emptyStateEl = document.getElementById('empty-state');
+        const searchEl = document.getElementById('search');
+        const sugEl = document.getElementById('suggestions');
+        const watchlistCountEl = document.getElementById('watchlist-count');
+
+        // --- WebSocket Setup ---
+        const WEBSOCKET_URL = "wss://socket.india.delta.exchange";
+        let ws, subscribed = new Set();
+        let isConnected = false;
+
+        function connectWS() {
+            const socket = new SockJS('/ws');
+            this.stompClient = Stomp.over(socket);
+
+
+
+
+
+
+
+
+
+            ws = new WebSocket(WEBSOCKET_URL);
+
+            ws.onopen = () => {
+                console.log("WebSocket connected");
+                isConnected = true;
+                if (subscribed.size) {
+                    subscribeChannels([...subscribed]);
+                }
+                updateConnectionStatus(true);
+            };
+
+            ws.onmessage = ev => {
+                const msg = JSON.parse(ev.data);
+                if (msg.type === "v2/ticker") {
+                    const sym = msg.symbol;
+                    const card = document.getElementById(`card-${sym}`);
+                    if (!card) return;
+
+                    const ltp = parseFloat(msg.mark_price).toFixed(2);
+                    const change24 = parseFloat(msg.mark_change_24h).toFixed(2);
+
+                    card.querySelector('.ltp').textContent = `$${ltp}`;
+                    const chEl = card.querySelector('.change_pct');
+                    chEl.textContent = `${change24 >= 0 ? '+' : ''}${change24}%`;
+                    chEl.className = `change_pct ${change24 >= 0 ? 'positive' : 'negative'}`;
+                }
+            };
+
+            ws.onerror = err => {
+                console.error("WebSocket error:", err);
+                updateConnectionStatus(false);
+            };
+
+            ws.onclose = () => {
+                console.log("WebSocket disconnected. Reconnecting...");
+                isConnected = false;
+                updateConnectionStatus(false);
+                setTimeout(connectWS, 3000);
+            };
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.querySelector('.stat-change');
+            if (!statusEl) return;
+
+            if (connected) {
+                statusEl.innerHTML = `
+            <i class="material-icons">check_circle</i>
+            <span>Connected</span>
+        `;
+                statusEl.className = "stat-change positive";
+            } else {
+                statusEl.innerHTML = `
+            <i class="material-icons">error</i>
+            <span>Reconnecting...</span>
+        `;
+                statusEl.className = "stat-change negative";
+            }
+        }
+
+        function subscribeChannels(symbols) {
+            if (!isConnected || symbols.length === 0) return;
+
+            ws.send(JSON.stringify({
+                type: "subscribe",
+                payload: { channels: [{ name: "v2/ticker", symbols }] }
+            }));
+
+            console.log("Subscribed to:", symbols);
+        }
+
+        function unsubscribeChannels(symbols) {
+            if (!isConnected || symbols.length === 0) return;
+
+            ws.send(JSON.stringify({
+                type: "unsubscribe",
+                payload: { channels: [{ name: "v2/ticker", symbols }] }
+            }));
+
+            console.log("Unsubscribed from:", symbols);
+        }
+
+        // Connect WebSocket
+        connectWS();
+
+        // --- Firestore Watchlist Listener ---
+        let current = new Set();
+
+        function setupFirestoreListener() {
+            try {
+                const db = firebase.firestore();
+                return db.collection("watchlist").onSnapshot(snapshot => {
+                    const next = new Set(snapshot.docs.map(d => d.id));
+                    const toAdd = [...next].filter(x => !current.has(x));
+                    const toRemove = [...current].filter(x => !next.has(x));
+
+                    if (toRemove.length) {
+                        unsubscribeChannels(toRemove);
+                        toRemove.forEach(x => subscribed.delete(x));
+                    }
+
+                    if (toAdd.length) {
+                        subscribeChannels(toAdd);
+                        toAdd.forEach(x => subscribed.add(x));
+                    }
+
+                    current = next;
+                    renderWatchlist(snapshot.docs);
+
+                    // Update watchlist count
+                    watchlistCountEl.textContent = snapshot.docs.length;
+
+                    // Show/hide empty state
+                    if (snapshot.docs.length === 0) {
+                        emptyStateEl.style.display = 'flex';
+                    } else {
+                        emptyStateEl.style.display = 'none';
+                    }
+                });
+            } catch (error) {
+                console.error("Firestore error:", error);
+            }
+        }
+
+        // Initialize Firestore listener
+        let unsubscribeFirestore;
+        if (firebase.apps.length) {
+            unsubscribeFirestore = setupFirestoreListener();
+        }
+
+        function renderWatchlist(docs) {
+            watchlistEl.innerHTML = '';
+
+            docs.forEach(doc => {
+                const d = doc.data();
+                const sym = doc.id;
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.id = `card-${sym}`;
+
+                // Determine asset type for badge
+                const assetType = sym.includes('-USD') ? 'Crypto' : 'Stocks';
+
+                card.innerHTML = `
+            <button class="close-btn" onclick="removeStock('${sym}')">
+                <i class="material-icons">close</i>
+            </button>
+            <div class="card-header">
+                <h2>${sym}</h2>
+                <div class="card-badge">${assetType}</div>
+            </div>
+            <div class="ltp">$${d.price.toFixed(2)}</div>
+            <div class="change-container">
+                <div class="change_pct ${d.change_pct >= 0 ? 'positive' : 'negative'}">
+                    ${d.change_pct >= 0 ? '+' : ''}${d.change_pct.toFixed(2)}%
+                </div>
+                <span>24h change</span>
+            </div>`;
+                watchlistEl.appendChild(card);
+            });
+        }
+
+        // Global function for remove button
+        window.removeStock = function (sym) {
+            try {
+                const db = firebase.firestore();
+                db.collection("watchlist").doc(sym).delete()
+                    .then(() => console.log(`Removed ${sym} from watchlist`))
+                    .catch(err => console.error("Error removing document:", err));
+            } catch (error) {
+                console.error("Firestore not available:", error);
+            }
+        }
+
+        // --- Search + Suggestions ---
+        let allSugs = [];
+        let lastQ = '';
+
+        let timeoutId;
+        searchEl.addEventListener('input', e => {
+            clearTimeout(timeoutId);
+            const q = e.target.value.trim();
+            if (!q) {
+                sugEl.style.display = 'none';
+                return;
+            }
+            lastQ = q;
+            timeoutId = setTimeout(() => fetchProducts(q), 300);
+        });
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', function (event) {
+            if (!searchEl.contains(event.target)) {
+                sugEl.style.display = 'none';
+            }
+        });
+
+        // Close with escape key
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                sugEl.style.display = 'none';
+            }
+        });
+
+        async function fetchProducts(q) {
+            const params = new URLSearchParams({
+                symbol: q,
+                contract_types: 'perpetual_futures',
+                states: 'live'
+            });
+
+            try {
+                const res = await fetch(`https://api.india.delta.exchange/v2/products?${params}`, {
+                    headers: { Accept: 'application/json' }
+                });
+
+                if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+                const js = await res.json();
+                allSugs = js.result || [];
+                renderSugs();
+            } catch (err) {
+                console.error("API Error:", err);
+                sugEl.style.display = 'none';
+            }
+        }
+
+        function renderSugs() {
+            if (!allSugs.length) {
+                sugEl.style.display = 'none';
+                return;
+            }
+
+            // Sort suggestions
+            allSugs.sort((a, b) => {
+                const A = a.symbol.toLowerCase(),
+                    B = b.symbol.toLowerCase(),
+                    q = lastQ.toLowerCase();
+
+                if (A.startsWith(q) && !B.startsWith(q)) return -1;
+                if (!A.startsWith(q) && B.startsWith(q)) return 1;
+                return A.localeCompare(B);
+            });
+
+            sugEl.innerHTML = '';
+            sugEl.style.display = 'block';
+
+            allSugs.forEach(p => {
+                const sym = p.symbol;
+                const inList = current.has(sym);
+
+                const div = document.createElement('div');
+                div.className = 'suggestion';
+                div.innerHTML = `
+            <span>${sym} — ${p.description}</span>
+            <span class="material-icons" style="color: ${inList ? '#34A853' : '#5f6368'}">
+                ${inList ? 'check_circle' : 'add_circle_outline'}
+            </span>`;
+
+                div.onclick = () => {
+                    toggleWL(p);
+                    // Clear input and hide suggestions after click
+                    searchEl.value = '';
+                    sugEl.style.display = 'none';
+                };
+
+                sugEl.appendChild(div);
+            });
+        }
+
+        async function toggleWL(p) {
+            const sym = p.symbol;
+            const db = firebase.firestore();
+            const ref = db.collection("watchlist").doc(sym);
+
+            if (current.has(sym)) {
+                try {
+                    await ref.delete();
+                    current.delete(sym);
+                    console.log(`Removed ${sym} from watchlist`);
+                } catch (error) {
+                    console.error("Error removing document:", error);
+                }
+            } else {
+                try {
+                    await ref.set({
+                        symbol: sym,
+                        price: parseFloat(p.tick_size || 0),
+                        change_pct: 0,
+                        product_id: p.id
+                    });
+                    current.add(sym);
+                    console.log(`Added ${sym} to watchlist`);
+                } catch (error) {
+                    console.error("Error adding document:", error);
+                }
+            }
+        }
+
+        // Initial empty state
+        if (watchlistEl.children.length === 0) {
+            emptyStateEl.style.display = 'flex';
+        }
+
+
+
+
+        <!-- public/app.js -->
+        class WatchlistApp {
+            constructor() {
+                this.userId = 'user1'; // Should come from auth system
+                this.stompClient = null;
+                this.watchlistEl = document.getElementById('watchlist');
+                this.emptyStateEl = document.getElementById('empty-state');
+                this.searchEl = document.getElementById('search');
+                this.sugEl = document.getElementById('suggestions');
+                this.watchlistCountEl = document.getElementById('watchlist-count');
+
+                this.connectWebSocket();
+                this.setupEventListeners();
+                this.fetchInitialWatchlist();
+            }
+
+            connectWebSocket() {
+                const socket = new SockJS('/ws');
+                this.stompClient = Stomp.over(socket);
+
+                this.stompClient.connect({}, () => {
+                    // Price updates
+                    this.stompClient.subscribe('/topic/prices', this.handlePriceUpdate.bind(this));
+
+                    // User-specific watchlist updates
+                    this.stompClient.subscribe(`/user/queue/watchlist`, this.handleWatchlistEvent.bind(this));
+                });
+            }
+
+            handlePriceUpdate(message) {
+                const data = JSON.parse(message.body);
+                const card = document.getElementById(`card-${data.symbol}`);
+                if (!card) return;
+
+                card.querySelector('.ltp').textContent = `$${data.ltp.toFixed(2)}`;
+                const chEl = card.querySelector('.change_pct');
+                chEl.textContent = `${data.change24 >= 0 ? '+' : ''}${data.change24.toFixed(2)}%`;
+                chEl.className = `change_pct ${data.change24 >= 0 ? 'positive' : 'negative'}`;
+            }
+
+            handleWatchlistEvent(message) {
+                const event = JSON.parse(message.body);
+                if (event.type === 'ADD') {
+                    this.addToWatchlistUI(event);
+                } else if (event.type === 'REMOVE') {
+                    this.removeFromWatchlistUI(event);
+                }
+            }
+
+            async fetchInitialWatchlist() {
+                try {
+                    const response = await fetch(`/api/watchlist/${this.userId}`);
+                    const watchlist = await response.json();
+
+                    watchlist.forEach(item => {
+                        this.addToWatchlistUI(item);
+                    });
+
+                    this.updateEmptyState();
+                } catch (error) {
+                    console.error('Failed to load watchlist:', error);
+                }
+            }
+
+            addToWatchlistUI(item) {
+                if (document.getElementById(`card-${item.symbol}`)) return;
+
+                const assetType = item.symbol.includes('-USD') ? 'Crypto' : 'Stocks';
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.id = `card-${item.symbol}`;
+                card.innerHTML = `
+                <button class="close-btn" data-symbol="${item.symbol}">
+                    <i class="material-icons">close</i>
+                </button>
+                <div class="card-header">
+                    <h2>${item.symbol}</h2>
+                    <div class="card-badge">${assetType}</div>
+                </div>
+                <div class="ltp">$--.--</div>
+                <div class="change-container">
+                    <div class="change_pct">+0.00%</div>
+                    <span>24h change</span>
+                </div>
+            `;
+
+                this.watchlistEl.prepend(card);
+                card.querySelector('.close-btn').addEventListener('click', () => {
+                    this.removeSymbol(item.symbol);
+                });
+
+                this.updateEmptyState();
+            }
+
+            removeFromWatchlistUI(symbol) {
+                const card = document.getElementById(`card-${symbol}`);
+                if (card) {
+                    card.remove();
+                    this.updateEmptyState();
+                }
+            }
+
+            updateEmptyState() {
+                const hasItems = this.watchlistEl.children.length > 0;
+                this.emptyStateEl.style.display = hasItems ? 'none' : 'flex';
+                this.watchlistCountEl.textContent = this.watchlistEl.children.length;
+            }
+
+            setupEventListeners() {
+                this.searchEl.addEventListener('input', this.handleSearch.bind(this));
+                document.addEventListener('click', (e) => {
+                    if (!this.searchEl.contains(e.target)) {
+                        this.sugEl.style.display = 'none';
+                    }
+                });
+            }
+
+            async handleSearch(e) {
+                const query = e.target.value.trim();
+                if (!query) {
+                    this.sugEl.style.display = 'none';
+                    return;
+                }
+
+                try {
+                    const products = await this.searchProducts(query);
+                    this.renderSuggestions(products);
+                } catch (error) {
+                    console.error('Search failed:', error);
+                    this.sugEl.style.display = 'none';
+                }
+            }
+
+            async searchProducts(query) {
+                const params = new URLSearchParams({
+                    symbol: query,
+                    contract_types: 'perpetual_futures',
+                    states: 'live'
+                });
+
+                const response = await fetch(`https://api.india.delta.exchange/v2/products?${params}`);
+                if (!response.ok) throw new Error('API error');
+
+                const data = await response.json();
+                return data.result || [];
+            }
+
+            renderSuggestions(products) {
+                if (!products.length) {
+                    this.sugEl.style.display = 'none';
+                    return;
+                }
+
+                this.sugEl.innerHTML = '';
+                products.forEach(product => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion';
+                    div.innerHTML = `
+                    <span>${product.symbol} — ${product.description}</span>
+                    <span class="material-icons">add_circle_outline</span>
+                `;
+                    div.addEventListener('click', () => {
+                        this.addSymbol(product);
+                        this.searchEl.value = '';
+                        this.sugEl.style.display = 'none';
+                    });
+                    this.sugEl.appendChild(div);
+                });
+                this.sugEl.style.display = 'block';
+            }
+
+            addSymbol(product) {
+                this.stompClient.send('/app/add', {}, JSON.stringify({
+                    symbol: product.symbol,
+                    productId: product.productId,
+                    description: product.description,
+                    userId: this.userId
+                }));
+            }
+
+            removeSymbol(product) {
+                this.stompClient.send('/app/remove', {}, JSON.stringify({
+                    symbol: product.symbol,
+                    productId: product.productId,
+                    description: product.description,
+                    userId: this.userId
+                }));
+            }
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            new WatchlistApp();
+        });
+    </script>
+</body>
+
+</html>

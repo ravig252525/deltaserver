@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body { font-family: sans-serif; }
+        #output {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+<h1>WebSocket Test Client</h1>
+
+<button id="connect">Connect</button>
+<button id="disconnect">Disconnect</button>
+
+<div>
+    <h3>Subscribe to Topics:</h3>
+    <input type="text" id="candleTopic" placeholder="BTCUSD|5m" value="BTCUSD|5m">
+    <button id="subscribeCandle">Subscribe to Candles</button>
+    <button id="subscribePositions">Subscribe to Positions</button>
+    <button id="subscribeSignals">Subscribe to Signals</button>
+</div>
+
+<div>
+    <h3>Send Ping:</h3>
+    <button id="sendPing">Send Ping</button>
+</div>
+
+<h3>Messages:</h3>
+<div id="output"></div>
+
+<script>
+    const output = document.getElementById('output');
+    let stompClient = null;
+    let candleSubscription = null;
+    let positionSubscription = null;
+    let signalSubscription = null;
+
+    function connect() {
+        const socket = new SockJS('http://localhost:8080/ws');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, frame => {
+            log('Connected: ' + frame);
+        }, error => {
+            log('Connection error: ' + error);
+        });
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            [candleSubscription, positionSubscription, signalSubscription].forEach(sub => {
+                if (sub) sub.unsubscribe();
+            });
+
+            stompClient.disconnect();
+            log("Disconnected");
+        }
+    }
+
+  function subscribeCandle() {
+          // Remove extra "candles/" prefix
+          const topic = document.getElementById('candleTopic').value;
+
+          candleSubscription = stompClient.subscribe(
+              `/topic/candles/${topic}`,  // FIXED PATH
+              message => log('CANDLE: ' + message.body)
+          );
+          log(`Subscribed to /topic/${topic}`);
+      }
+
+    function subscribePositions() {
+        positionSubscription = stompClient.subscribe(
+            '/topic/positions',
+            message => log('POSITION: ' + message.body)
+        );
+        log('Subscribed to positions');
+    }
+
+    function subscribeSignals() {
+        signalSubscription = stompClient.subscribe(
+            '/topic/signals',
+            message => log('SIGNAL: ' + message.body)
+        );
+        log('Subscribed to signals');
+    }
+
+    function sendPing() {
+        fetch('/ping')
+            .then(response => response.text())
+            .then(data => log('PING RESPONSE: ' + data));
+    }
+
+    function log(message) {
+        const p = document.createElement('p');
+        p.textContent = message;
+        output.appendChild(p);
+        output.scrollTop = output.scrollHeight;
+    }
+
+    // Event listeners
+    document.getElementById('connect').addEventListener('click', connect);
+    document.getElementById('disconnect').addEventListener('click', disconnect);
+    document.getElementById('subscribeCandle').addEventListener('click', subscribeCandle);
+    document.getElementById('subscribePositions').addEventListener('click', subscribePositions);
+    document.getElementById('subscribeSignals').addEventListener('click', subscribeSignals);
+    document.getElementById('sendPing').addEventListener('click', sendPing);
+</script>
+</body>
+</html>

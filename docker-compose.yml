@@ -1,0 +1,20 @@
+services:
+  redis:
+    image: redis:7.4.5
+    ports:
+      - "6379:6379"
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+   # environment:
+     # SPRING_REDIS_HOST: redis
+      #SPRING_REDIS_PORT: 6379
+
+
+     # when deploy
+    environment:
+          REDIS_URL: redis://redis:6379

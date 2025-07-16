@@ -1,0 +1,42 @@
+body, ul { margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; }
+
+.main-content {
+  padding-top: 64px;
+  padding: 16px;
+}
+
+.search-field { margin-right: 16px; }
+.suggestions {
+  position: absolute;
+  top: 64px;
+  right: 16px;
+  width: 300px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  display: none;
+  z-index: 10;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.empty-state {
+  text-align: center;
+  color: rgba(0,0,0,0.6);
+  padding: 32px;
+}
+.empty-state .material-icons {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+/* Hide list markers */
+.mdc-list .mdc-list-item { list-style: none; }
+

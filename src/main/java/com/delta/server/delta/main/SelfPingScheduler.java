@@ -25,7 +25,7 @@ public class SelfPingScheduler {
     public void selfPing() {
         try {
             // अपनी Render ऐप का URL यहां डालें
-            String appUrl = "http://localhost:8080/ping"; // लोकल टेस्टिंग के लिए, Render पर डिप्लॉय करते समय बदलें
+            String appUrl = "https://deltaserver-bdru.onrender.com/ping"; // लोकल टेस्टिंग के लिए, Render पर डिप्लॉय करते समय बदलें
             String response = restTemplate.getForObject(appUrl, String.class);
             System.out.println("Self-ping successful: " + response);
         } catch (Exception e) {

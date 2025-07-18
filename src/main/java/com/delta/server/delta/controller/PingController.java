@@ -1,6 +1,6 @@
 package com.delta.server.delta.controller;
 
-
+import com.delta.server.delta.model.Watchlist;
 import com.delta.server.delta.model.Candle;
 import com.delta.server.delta.repo.CandleRepository;
 import org.springframework.http.ResponseEntity;

@@ -17,7 +17,7 @@ public interface WatchlistRepository
      * @param userId the user identifier
      * @return Mono.empty() अगर कोई नहीं मिला, वरना Mono<Watchlist>
      */
-    Mono<Watchlist> findBySymbolForUser(String symbol, String userId);
+    Mono<Watchlist> findBySymbolAndUserId(String symbol, String userId);
 
     /**
      * एक user की सारी watchlist entries लाए

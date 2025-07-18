@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
+import com.delta.server.delta.repo.WatchlistRepository;
 import java.util.List;
 
 @RestController
@@ -17,8 +17,11 @@ public class PingController {
 
     private final CandleRepository candleRepo;
 
-    public PingController(CandleRepository candleRepo) {
+    private final WatchlistRepository watchlistRepo;
+
+    public PingController(CandleRepository candleRepo, WatchlistRepository watchlistRepo) {
         this.candleRepo = candleRepo;
+        this.watchlistRepo = watchlistRepo;
     }
 
 
@@ -26,6 +29,11 @@ public class PingController {
     public ResponseEntity<List<Candle>> getHistoricalCandles(@RequestParam String symbol, @RequestParam String timeframe) {
         List<Candle> candles = candleRepo.getSeries(symbol + "|" + timeframe);
         return ResponseEntity.ok(candles);
+    }
+
+    @GetMapping("/watchlists")
+    public Flux<Watchlist> getWatchLists(String userid) {
+        return watchlistRepo.findAllByUserId(userid);
     }
 
 }

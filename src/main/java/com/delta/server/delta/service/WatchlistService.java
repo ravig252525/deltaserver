@@ -168,7 +168,7 @@ public class WatchlistService {
 
     // === यूज़र ने UI से ऐड किया ==
     public Mono<Watchlist> addSymbol(Watchlist watchlist) {
-        return ensureConnected(watchlist.getUserId()).then(repo.findBySymbolForUser(watchlist.getSymbol(), watchlist.getUserId()).switchIfEmpty(Mono.defer(() -> repo.save(watchlist))))
+        return ensureConnected(watchlist.getUserId()).then(repo.findBySymbolAndUserId(watchlist.getSymbol(), watchlist.getUserId()).switchIfEmpty(Mono.defer(() -> repo.save(watchlist))))
                 .doOnNext(saved -> {
                     subscribe(saved);
                     sink.emitNext(new WatchListEvent(watchlist.getId(), false, watchlist.getUserId()), Sinks.EmitFailureHandler.FAIL_FAST);
@@ -182,7 +182,7 @@ public class WatchlistService {
      * Remove a symbol—guarded by socket-init as well.
      */
     public Mono<Void> removeSymbol(Watchlist watchlist) {
-        return ensureConnected(watchlist.getUserId()).then(repo.findBySymbolForUser(watchlist.getSymbol(), watchlist.getUserId()).flatMap(entry -> repo.delete(entry).doOnSuccess(v -> {
+        return ensureConnected(watchlist.getUserId()).then(repo.findBySymbolAndUserId(watchlist.getSymbol(), watchlist.getUserId()).flatMap(entry -> repo.delete(entry).doOnSuccess(v -> {
             unsubscribe(watchlist);
             sink.emitNext(new WatchListEvent(watchlist.getId(), true, watchlist.getUserId()), Sinks.EmitFailureHandler.FAIL_FAST);
         }))).then();

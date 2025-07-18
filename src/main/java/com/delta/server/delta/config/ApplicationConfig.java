@@ -87,10 +87,13 @@ public class ApplicationConfig {
         DatabaseClient client = DatabaseClient.create(connectionFactory);
         return args -> client.sql("""
                         CREATE TABLE IF NOT EXISTS watchlist (
-                           id   SERIAL PRIMARY KEY,
-                           symbol VARCHAR(50) NOT NULL,
-                           user_id VARCHAR(50) NOT NULL
-                        );
+  id SERIAL PRIMARY KEY,
+  symbol VARCHAR(50) NOT NULL,
+  productid BIGINT NOT NULL,
+  description TEXT,
+  userid VARCHAR(50) NOT NULL
+);
+
                         """)
                 .fetch()
                 .rowsUpdated()

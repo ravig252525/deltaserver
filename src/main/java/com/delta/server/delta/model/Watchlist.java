@@ -9,9 +9,9 @@ import org.springframework.data.relational.core.mapping.Table;
 public class Watchlist {
 
     @Id
-    private Long id;
+     private Long id;
     private String symbol;
-    private Long productId;
+    private Long productid;
     private String description;
-    private String userId;
+    private String userid;
 }
